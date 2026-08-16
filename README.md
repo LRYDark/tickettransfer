@@ -16,6 +16,9 @@ Aucune dépendance à d'autres plugins (utilise uniquement le cœur GLPI).
 - Commentaire libre joint à l'email.
 - Trace dans l'historique du ticket : « X a transféré le ticket à : … ».
 - Modification optionnelle du statut du ticket après transfert.
+- Fenêtre modale responsive (v1.1.0) : large et centrée sur ordinateur, panneau
+  pleine largeur ancré en bas de l'écran sur téléphone, comme les modals des
+  plugins RP et Gestion.
 
 ## Réglages du statut
 
