@@ -323,23 +323,32 @@ if (isset($_POST['transfer'])) {
             $bodyHtml = implode('<br>', $htmlLines);
         }
 
-        $mailer = new GLPIMailer();
-        $email = $mailer->getEmail();
-        $email->subject($subject);
-        $email->text($bodyText !== '' ? $bodyText : strip_tags($bodyHtml));
-        $email->html($bodyHtml !== '' ? $bodyHtml : nl2br(Html::entities_deep($bodyText)));
-        foreach ($recipients as $recipient) {
-            $email->addTo((string) $recipient);
-        }
+        // File d'attente des notifications de GLPI, envoi immédiat : le résultat s'affiche tout de suite comme avant ;
+        // un envoi en échec reste en file et GLPI le réessaie (tâche « queuednotification »). Une ligne par
+        // destinataire : chacun reçoit son mail, sans voir les adresses des autres.
         $sender = Config::getEmailSender();
-        if (!empty($sender['email'])) {
-            $email->from(new \Symfony\Component\Mime\Address(
-                $sender['email'],
-                (string) ($sender['name'] ?? '')
-            ));
+        $result = PluginTickettransferMailqueue::send([
+            'itemtype'    => Ticket::class,
+            'items_id'    => $ticketId,
+            'entities_id' => (int) ($ticket->fields['entities_id'] ?? 0),
+            'event'       => 'plugin_tickettransfer_transfer',
+            'subject'     => $subject,
+            'text'        => $bodyText !== '' ? $bodyText : strip_tags($bodyHtml),
+            'html'        => $bodyHtml !== '' ? $bodyHtml : nl2br(Html::entities_deep($bodyText)),
+            'to'          => array_map(static fn($recipient): array => [(string) $recipient, ''], $recipients),
+            'from'        => !empty($sender['email']) ? [(string) $sender['email'], (string) ($sender['name'] ?? '')] : null,
+        ], true);
+        if ($result['pending'] !== []) {
+            // Transfert fait, mail en file : GLPI le renverra tout seul.
+            Session::addMessageAfterRedirect(htmlescape(sprintf(
+                __('Le mail de transfert n\'est pas encore parti (%s) : il reste en file d\'attente et GLPI le renverra automatiquement.', 'tickettransfer'),
+                implode(' ; ', array_unique($result['errors']))
+            )), true, WARNING);
         }
 
-        if ($mailer->send()) {
+        // Transfert réussi dès qu'un mail est parti ou reste en file (GLPI le renverra) ; échec seulement si rien
+        // n'a pu partir ni être mis en file.
+        if ($result['sent'] > 0 || $result['pending'] !== []) {
             $historyMessage = sprintf(
                 __('%1$s a transfere le ticket a : %2$s', 'tickettransfer'),
                 $senderName,
