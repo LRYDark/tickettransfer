@@ -1,6 +1,5 @@
 <?php
 
-include('../../../../inc/includes.php');
 
 Session::checkLoginUser();
 Session::checkRight(PluginTickettransferProfile::RIGHTNAME, PluginTickettransferProfile::RIGHT_TRANSFER);

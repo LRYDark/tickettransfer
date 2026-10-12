@@ -2,7 +2,7 @@
 
 class PluginTickettransferPreference extends CommonDBTM
 {
-    public static $rightname = PluginTickettransferProfile::RIGHTNAME;
+    public static string $rightname = PluginTickettransferProfile::RIGHTNAME;
     public $table = 'glpi_plugin_tickettransfer_preferences';
 
     private const DEFAULT_ASSIGN = 1;
@@ -163,8 +163,7 @@ class PluginTickettransferPreference extends CommonDBTM
 
         $formAction = $CFG_GLPI['root_doc'] . '/plugins/tickettransfer/front/preference.form.php';
 
-        echo "<form method='post' action='" . Html::cleanInputText($formAction) . "' class='mb-3'>";
-        echo Html::hidden('_glpi_csrf_token', ['value' => Session::getNewCSRFToken(true)]);
+        echo "<form method='post' action='" . htmlescape($formAction) . "' class='mb-3'>";
         echo Html::hidden('users_id', ['value' => $userId]);
 
         echo "<div class='card'><div class='card-body'>";

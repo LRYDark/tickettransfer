@@ -3,7 +3,7 @@
 class PluginTickettransferProfile extends Profile
 {
     public const RIGHTNAME = 'plugin_tickettransfer';
-    public static $rightname = self::RIGHTNAME;
+    public static string $rightname = self::RIGHTNAME;
 
     public const RIGHT_TRANSFER    = 1;
     public const RIGHT_PREFERENCES = 2;

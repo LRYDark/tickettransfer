@@ -188,7 +188,7 @@ function plugin_tickettransfer_timeline_actions(array $params): void
     CSS;
 
     $transferButtonId = 'tickettransfer_btn_' . $ticketId;
-    $transferLabel = Html::entities_deep(__('Transferer ticket', 'tickettransfer'));
+    $transferLabel = htmlescape(__('Transferer ticket', 'tickettransfer'));
     echo "<style id='tickettransfer_modal_css'>{$modalCss}</style>";
     echo $transferModal;
     echo "<li class='tickettransfer-timeline-action'>";

@@ -1,8 +1,8 @@
 <?php
 
-define('PLUGIN_TICKETTRANSFER_VERSION', '1.1.1');
-define('PLUGIN_TICKETTRANSFER_MIN_GLPI', '11.0.0');
-define('PLUGIN_TICKETTRANSFER_MAX_GLPI', '11.0.99');
+define('PLUGIN_TICKETTRANSFER_VERSION', '1.2.0');
+define('PLUGIN_TICKETTRANSFER_MIN_GLPI', '12.0.0');
+define('PLUGIN_TICKETTRANSFER_MAX_GLPI', '12.0.99');
 
 /**
  * Init hooks of the plugin.
@@ -13,7 +13,6 @@ function plugin_init_tickettransfer()
 {
     global $PLUGIN_HOOKS;
 
-    $PLUGIN_HOOKS['csrf_compliant']['tickettransfer'] = true;
     $PLUGIN_HOOKS['change_profile']['tickettransfer'] = [PluginTickettransferProfile::class, 'initProfile'];
 
     $plugin = new Plugin();

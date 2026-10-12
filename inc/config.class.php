@@ -2,7 +2,7 @@
 
 class PluginTickettransferConfig extends CommonDBTM
 {
-    public static $rightname = PluginTickettransferProfile::RIGHTNAME;
+    public static string $rightname = PluginTickettransferProfile::RIGHTNAME;
     private static $_instance = null;
 
     public static function getTypeName($nb = 0)
@@ -73,7 +73,7 @@ class PluginTickettransferConfig extends CommonDBTM
             if (Session::haveRight('config', UPDATE)) {
                 self::showConfigPage();
             } else {
-                Html::displayRightError();
+                throw new \Glpi\Exception\Http\AccessDeniedHttpException();
             }
         }
         return true;

@@ -1,6 +1,5 @@
 <?php
 
-include('../../../inc/includes.php');
 
 Session::checkLoginUser();
 Session::checkRight(PluginTickettransferProfile::RIGHTNAME, PluginTickettransferProfile::RIGHT_PREFERENCES);
@@ -8,7 +7,7 @@ Session::checkRight(PluginTickettransferProfile::RIGHTNAME, PluginTickettransfer
 $userId = Session::getLoginUserID();
 $postedUserId = (int) ($_POST['users_id'] ?? 0);
 if ($postedUserId <= 0 || $postedUserId !== $userId) {
-    Html::displayRightError();
+    throw new \Glpi\Exception\Http\AccessDeniedHttpException();
 }
 
 if (isset($_POST['update_prefs'])) {

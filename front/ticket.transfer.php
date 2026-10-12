@@ -1,6 +1,5 @@
 <?php
 
-include('../../../inc/includes.php');
 
 Session::checkLoginUser();
 Session::checkRight(PluginTickettransferProfile::RIGHTNAME, PluginTickettransferProfile::RIGHT_TRANSFER);
@@ -10,12 +9,12 @@ global $CFG_GLPI;
 
 $ticketId = (int) ($_GET['tickets_id'] ?? ($_POST['tickets_id'] ?? 0));
 if ($ticketId <= 0) {
-    Html::displayErrorAndDie(__('Ticket manquant.', 'tickettransfer'));
+    throw new \Glpi\Exception\Http\BadRequestHttpException(__('Ticket manquant.', 'tickettransfer'));
 }
 
 $ticket = new Ticket();
 if (!$ticket->getFromDB($ticketId)) {
-    Html::displayErrorAndDie(__('Ticket introuvable.', 'tickettransfer'));
+    throw new \Glpi\Exception\Http\BadRequestHttpException(__('Ticket introuvable.', 'tickettransfer'));
 }
 
 $canedit = false;
@@ -29,7 +28,7 @@ if (Session::haveRight(Entity::$rightname, UPDATE)) {
 }
 
 if (!$canedit) {
-    Html::displayRightError();
+    throw new \Glpi\Exception\Http\AccessDeniedHttpException();
 }
 
 $baseUrl = $CFG_GLPI['root_doc'] . '/plugins/tickettransfer/front/ticket.transfer.php?tickets_id=' . $ticketId;
@@ -53,15 +52,6 @@ $selectedUsers = [];
 $selectedGroups = [];
 
 if (isset($_POST['transfer'])) {
-    // GLPI 11 may already validate CSRF on legacy front controllers before this file is executed.
-    // Avoid a second validation when a standard token is already present.
-    if (
-        empty($_POST['_glpi_csrf_token'])
-        || !defined('GLPI_VERSION')
-        || version_compare((string) GLPI_VERSION, '11.0.0', '<')
-    ) {
-        Session::checkCSRF($_POST, true);
-    }
     /** @var DBmysql $DB */
     global $DB;
 
@@ -267,9 +257,9 @@ if (isset($_POST['transfer'])) {
             if ($tag === '##ticket.url##') {
                 $htmlTags[$tag] = htmlescape($value);
             } elseif ($tag === '##transfer.comment##') {
-                $htmlTags[$tag] = nl2br(Html::entities_deep($value));
+                $htmlTags[$tag] = nl2br(htmlescape($value));
             } else {
-                $htmlTags[$tag] = Html::entities_deep($value);
+                $htmlTags[$tag] = htmlescape($value);
             }
         }
 
@@ -282,7 +272,7 @@ if (isset($_POST['transfer'])) {
         if ($templateId > 0) {
             $curLang = $_SESSION['glpilanguage'] ?? ($CFG_GLPI['language'] ?? 'fr_FR');
             $langs   = array_values(array_unique([$curLang, substr((string) $curLang, 0, 2), '']));
-            $order   = new \QueryExpression(
+            $order   = new \Glpi\DBAL\QueryExpression(
                 "FIELD(language,'" . implode("','", array_map('addslashes', $langs)) . "')"
             );
             $tpl = $DB->request([
@@ -334,7 +324,7 @@ if (isset($_POST['transfer'])) {
             'event'       => 'plugin_tickettransfer_transfer',
             'subject'     => $subject,
             'text'        => $bodyText !== '' ? $bodyText : strip_tags($bodyHtml),
-            'html'        => $bodyHtml !== '' ? $bodyHtml : nl2br(Html::entities_deep($bodyText)),
+            'html'        => $bodyHtml !== '' ? $bodyHtml : nl2br(htmlescape($bodyText)),
             'to'          => array_map(static fn($recipient): array => [(string) $recipient, ''], $recipients),
             'from'        => !empty($sender['email']) ? [(string) $sender['email'], (string) ($sender['name'] ?? '')] : null,
         ], true);
@@ -381,18 +371,17 @@ Html::header(
 Html::displayMessageAfterRedirect();
 
 echo "<div class='card'><div class='card-body'>";
-echo "<div class='mb-3'><strong>Ticket</strong> " . (int) $ticketId . " - " . Html::entities_deep($ticket->getName()) . "</div>";
+echo "<div class='mb-3'><strong>Ticket</strong> " . (int) $ticketId . " - " . htmlescape($ticket->getName()) . "</div>";
 
 if (!empty($errors)) {
     echo "<div class='alert alert-danger'>";
     foreach ($errors as $error) {
-        echo "<div>" . Html::entities_deep($error) . "</div>";
+        echo "<div>" . htmlescape($error) . "</div>";
     }
     echo "</div>";
 }
 
-echo "<form method='post' action='" . Html::cleanInputText($baseUrl) . "'>";
-echo Html::hidden('_glpi_csrf_token', ['value' => Session::getNewCSRFToken(true)]);
+echo "<form method='post' action='" . htmlescape($baseUrl) . "'>";
 echo Html::hidden('tickets_id', ['value' => $ticketId]);
 if (!empty($_REQUEST['_in_modal'])) {
     echo Html::hidden('_in_modal', ['value' => 1]);
@@ -406,8 +395,8 @@ foreach ($selectedUsers as $userId) {
         $uName = $u->getName();
         $uEmail = $u->getDefaultEmail();
         $uTitle = $uEmail !== '' ? sprintf('%s - %s', $uName, $uEmail) : $uName;
-        $selectedOptions .= "<option value='User_{$userId}' title='" . Html::cleanInputText($uTitle) . "' selected>"
-            . Html::entities_deep($uName) . "</option>";
+        $selectedOptions .= "<option value='User_{$userId}' title='" . htmlescape($uTitle) . "' selected>"
+            . htmlescape($uName) . "</option>";
     }
 }
 foreach ($selectedGroups as $groupId) {
@@ -415,7 +404,7 @@ foreach ($selectedGroups as $groupId) {
     if ($g->getFromDB($groupId)) {
         $gName = (string) ($g->fields['completename'] !== '' ? $g->fields['completename'] : $g->getName());
         $selectedOptions .= "<option value='Group_{$groupId}' selected>"
-            . Html::entities_deep($gName) . "</option>";
+            . htmlescape($gName) . "</option>";
     }
 }
 
@@ -447,11 +436,11 @@ echo "</div>";
 
 echo "<div class='alert alert-info mb-3' id='tickettransfer_transfer_info'>";
 if (!$assignOnTransfer) {
-    echo Html::entities_deep(__('Les utilisateurs transferes ne seront pas associes dans "Attribue a".', 'tickettransfer'));
+    echo htmlescape(__('Les utilisateurs transferes ne seront pas associes dans "Attribue a".', 'tickettransfer'));
 } elseif ($replaceOnTransfer) {
-    echo Html::entities_deep(__('Les utilisateurs transferes remplaceront les assignes existants.', 'tickettransfer'));
+    echo htmlescape(__('Les utilisateurs transferes remplaceront les assignes existants.', 'tickettransfer'));
 } else {
-    echo Html::entities_deep(__('Les utilisateurs transferes seront ajoutes aux assignes existants.', 'tickettransfer'));
+    echo htmlescape(__('Les utilisateurs transferes seront ajoutes aux assignes existants.', 'tickettransfer'));
 }
 echo "</div>";
 
@@ -468,7 +457,7 @@ if ($allowModalStatusOverride) {
 echo "<div class='mb-3'>";
 echo "<label class='form-label mb-1' for='tickettransfer_transfer_comment'>" . __('Commentaire', 'tickettransfer') . "</label>";
 echo "<textarea class='form-control' id='tickettransfer_transfer_comment' name='transfer_comment' rows='3'>"
-    . Html::entities_deep($transferComment) . "</textarea>";
+    . htmlescape($transferComment) . "</textarea>";
 echo "</div>";
 
 echo "<div class='text-end'>";

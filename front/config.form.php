@@ -1,7 +1,6 @@
 <?php
 
 if (!defined('GLPI_ROOT')) {
-    include '../../../inc/includes.php';
 }
 
 $from_tab = $GLOBALS['PLUGIN_TICKETTRANSFER_FROM_TAB'] ?? false;
@@ -11,21 +10,10 @@ Session::checkRight('config', UPDATE);
 
 $configItem = PluginTickettransferConfig::getInstance();
 $config = PluginTickettransferConfig::getConfig();
-$csrf_token = Session::getNewCSRFToken(true);
 
 $form_action = $configItem->getFormURL();
 if ($from_tab) {
     $form_action .= '?forcetab=' . urlencode('PluginTickettransferConfig$1');
-}
-
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
-    if (
-        empty($_POST['_glpi_csrf_token'])
-        || !defined('GLPI_VERSION')
-        || version_compare((string) GLPI_VERSION, '11.0.0', '<')
-    ) {
-        Session::checkCSRF($_POST, true);
-    }
 }
 
 if (isset($_POST['update'])) {
@@ -53,7 +41,6 @@ $cfgAllowPref = !isset($config['allow_pref_status']) || !empty($config['allow_pr
 $cfgAllowModal = !isset($config['allow_modal_status']) || !empty($config['allow_modal_status']);
 
 echo "<form name='tickettransfer_config' method='post' action='" . $form_action . "' class='mb-3'>";
-echo Html::hidden('_glpi_csrf_token', ['value' => $csrf_token]);
 echo Html::hidden('id', ['value' => $configItem->fields['id'] ?? 1]);
 
 echo "<div class='card mb-3'>";
@@ -137,7 +124,7 @@ echo "<button type='button' id='tickettransfer-tags-toggle' class='btn btn-link 
 echo "<div id='tickettransfer-tags-wrap' style='display:none;' class='mt-2'>";
 echo "<table class='table table-sm align-middle mb-0'><tbody>";
 foreach ($tags as $tag => $label) {
-    echo "<tr><td style='width:230px;'><code>" . Html::entities_deep($tag) . "</code></td><td>" . Html::entities_deep($label) . "</td></tr>";
+    echo "<tr><td style='width:230px;'><code>" . htmlescape($tag) . "</code></td><td>" . htmlescape($label) . "</td></tr>";
 }
 echo "</tbody></table>";
 echo "</div>";
