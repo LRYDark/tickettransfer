@@ -14,7 +14,9 @@ Aucune dépendance à d'autres plugins (utilise uniquement le cœur GLPI).
 - Option d'association des destinataires dans « Attribué à » (ajout ou
   remplacement), groupes inclus.
 - Commentaire libre joint à l'email.
-- Trace dans l'historique du ticket : « X a transféré le ticket à : … ».
+- Trace dans l'historique du ticket : « X a transféré le ticket à : … », colonne
+  « Champ » = « Transfert de ticket », avec une bulle (i) qui montre au survol le
+  commentaire envoyé dans le mail (v1.1.3).
 - Modification optionnelle du statut du ticket après transfert.
 - Fenêtre modale responsive (v1.1.0) : large et centrée sur ordinateur, panneau
   pleine largeur ancré en bas de l'écran sur téléphone, comme les modals des
@@ -51,3 +53,5 @@ est réservée aux super-admins (droit cœur `config`), pas un droit de profil.
 
 - `glpi_plugin_tickettransfer_configs`
 - `glpi_plugin_tickettransfer_preferences`
+- `glpi_plugin_tickettransfer_transfers` (un enregistrement par transfert, avec
+  son commentaire ; la ligne d'historique y renvoie par `glpi_logs.new_id`)

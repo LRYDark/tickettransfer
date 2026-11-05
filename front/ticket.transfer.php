@@ -354,13 +354,8 @@ if (isset($_POST['transfer'])) {
                 $senderName,
                 implode(', ', $recipientNames)
             );
-            Log::history(
-                $ticketId,
-                'Ticket',
-                [0, '', $historyMessage],
-                '',
-                Log::HISTORY_LOG_SIMPLE_MESSAGE
-            );
+            // Ligne « Transfert de ticket » de l'historique ; le commentaire du mail s'affiche au survol de sa bulle (i).
+            PluginTickettransferTransfer::addToHistory($ticketId, $historyMessage, $transferComment);
 
             Session::addMessageAfterRedirect(__('Ticket transfere.', 'tickettransfer'), true, INFO);
             Html::redirect($baseUrl);

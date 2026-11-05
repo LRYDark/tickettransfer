@@ -90,6 +90,42 @@ SQL;
             $migration->addKey($prefTable, 'users_id', 'users_id', 'UNIQUE');
         }
 
+        // Transfers table: one row per transfer, keeps the comment sent by mail. The ticket history line
+        // points to it (glpi_logs.new_id) and shows that comment in an (i) bubble.
+        $transferTable = 'glpi_plugin_tickettransfer_transfers';
+        if (!$DB->tableExists($transferTable)) {
+            $query = <<<SQL
+                CREATE TABLE `$transferTable` (
+                    `id` int $keySign NOT NULL auto_increment,
+                    `tickets_id` int $keySign NOT NULL DEFAULT '0',
+                    `users_id` int $keySign NOT NULL DEFAULT '0',
+                    `comment` text,
+                    `date_creation` timestamp NULL DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `tickets_id` (`tickets_id`),
+                    KEY `users_id` (`users_id`),
+                    KEY `date_creation` (`date_creation`)
+                ) ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation} ROW_FORMAT=DYNAMIC;
+SQL;
+            $DB->doQuery($query);
+
+            // Transfers logged before this table were plain messages with an empty "Field" column: they now read
+            // "Transfert de ticket" too. Their comment was never stored, so they get no (i) bubble.
+            $DB->update(
+                'glpi_logs',
+                [
+                    'itemtype_link' => PluginTickettransferTransfer::class,
+                    'linked_action' => PluginTickettransferTransfer::HISTORY_TRANSFER,
+                ],
+                [
+                    'itemtype'      => Ticket::class,
+                    'itemtype_link' => '',
+                    'linked_action' => Log::HISTORY_LOG_SIMPLE_MESSAGE,
+                    'new_value'     => ['LIKE', PluginTickettransferTransfer::LEGACY_HISTORY_PATTERN],
+                ]
+            );
+        }
+
         if (class_exists(PluginTickettransferProfile::class)) {
             PluginTickettransferProfile::install($migration);
         }
@@ -277,7 +313,20 @@ HTML;
             $DB->delete('glpi_notificationtemplates', ['id' => $templateId]);
         }
 
+        // Transfer lines of ticket histories go back to plain messages, so they stay readable without the plugin
+        // (their comment goes away with the transfers table).
+        $DB->update(
+            'glpi_logs',
+            [
+                'itemtype_link' => '',
+                'linked_action' => Log::HISTORY_LOG_SIMPLE_MESSAGE,
+                'new_id'        => null,
+            ],
+            ['itemtype_link' => PluginTickettransferTransfer::class]
+        );
+
         $migration = new Migration(PLUGIN_TICKETTRANSFER_VERSION);
+        $migration->dropTable('glpi_plugin_tickettransfer_transfers');
         $migration->dropTable('glpi_plugin_tickettransfer_preferences');
         $migration->dropTable('glpi_plugin_tickettransfer_configs');
         $migration->executeMigration();
