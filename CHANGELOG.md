@@ -1,5 +1,23 @@
 # Journal des changements
 
+## 1.2.2 — 2026-11-05
+
+**Après la mise à jour : cliquer « Mettre à jour » dans Configuration → Plugins.**
+
+- **Historique du ticket** : la ligne « X a transfere le ticket a : … » affiche « Transfert de ticket » dans la
+  colonne « Champ », et une bulle (i) dont le survol montre le commentaire envoyé dans le mail (seulement s'il y en
+  a un). Mécanisme natif de GLPI pour les plugins (`Log::HISTORY_PLUGIN`, `getHistoryEntry()`).
+- **Nouvelle table `glpi_plugin_tickettransfer_transfers`** : un enregistrement par transfert (ticket, auteur,
+  date, commentaire complet, sans la limite de 255 caractères de l'historique). La ligne d'historique pointe dessus
+  par `glpi_logs.new_id`.
+- **Migration** : les transferts déjà dans l'historique prennent aussi « Transfert de ticket » dans la colonne
+  « Champ » ; leur commentaire n'avait jamais été enregistré, ils n'ont donc pas de bulle.
+- **Désinstallation** : les lignes de transfert redeviennent de simples messages, lisibles sans le plugin, et la
+  table des transferts est supprimée.
+- Plugin désactivé : GLPI masque les lignes de transfert de l'historique (c'est le plugin qui les affiche) ; elles
+  restent en base et réapparaissent à la réactivation.
+- `plugin.xml` aligné sur la version du plugin (il indiquait encore 1.2.0).
+
 ## 1.2.1 — 2026-11-02
 
 **Après la mise à jour : cliquer « Mettre à jour » dans Configuration → Plugins.**
